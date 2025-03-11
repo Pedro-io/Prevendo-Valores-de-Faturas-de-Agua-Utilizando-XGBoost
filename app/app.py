@@ -3,7 +3,7 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import randint
 from scripts.pre_processing import *
@@ -59,8 +59,9 @@ def train_model_for_matricula(data, matricula):
     # Calcular o MAE no conjunto de teste
     y_pred = best_model.predict(X_test)
     mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
 
-    return best_model, preprocessor, mae # Retorna o modelo, o preprocessor e o MAE
+    return best_model, preprocessor, mae, r2 # Retorna o modelo, o preprocessor, o MAE e o r2
 
 
 def prever_proximo_valor(model, preprocessor, data, matricula):
@@ -180,6 +181,7 @@ O modelo utiliza dados históricos de faturas, como o ano e mês de vencimento, 
 
 *   **Mean Absolute Error (MAE):** O MAE mede a diferença média absoluta entre os valores previstos e os valores reais. 
     Quanto menor o MAE, melhor o modelo está performando.
+*   **Coeficiente de Determinação (R²):** Mede o quão bem o modelo explica a variância dos dados.
 """)
 
 # Carregar os dados (uma vez)
@@ -200,7 +202,7 @@ matricula_selecionada = st.selectbox('Selecione a Matrícula:', matriculas_dispo
 if st.button('Prever Próxima Fatura'):
     with st.spinner(f'Treinando modelo para a matrícula {matricula_selecionada}...'):
         # Treinar o modelo para a matrícula selecionada
-        model, preprocessor, mae = train_model_for_matricula(data, matricula_selecionada)
+        model, preprocessor, mae, r2 = train_model_for_matricula(data, matricula_selecionada)
 
         if model is not None:
             # Fazer a previsão
@@ -211,6 +213,9 @@ if st.button('Prever Próxima Fatura'):
 
             # Exibir o MAE no conjunto de teste
             st.write(f"Mean Absolute Error (MAE) no conjunto de teste: {mae:.2f}")
+            
+            # Exibir o r2 no conjunto de teste
+            st.write(f"Coeniceiente de determinação (R²) no conjunto de teste: {r2:.2f}")
             
             # Preparar os dados para o gráfico
             matricula_data_grafico = data[data['MATRICULA'] == matricula_selecionada].copy()
